@@ -7,8 +7,8 @@ cat > pve-monitor-installer.sh << 'SCRIPT_EOF'
 # =============================================================================
 
 # GitHub repository configuration
-REPO_OWNER="YOUR_USERNAME"  # CHANGE THIS TO YOUR GITHUB USERNAME
-REPO_NAME="pve-hardware-monitor"
+REPO_OWNER="Muneeb-Nazir"
+REPO_NAME="Proxmox-pve-hardware-monitor"
 REPO_URL="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main"
 
 # Version tracking
