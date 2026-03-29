@@ -2,15 +2,15 @@
 PVE Universal Hardware Monitor - Complete Installation &amp; Update Script
 One-line Installation from GitHub:
 bash
-# Install from GitHub (replace YOUR_USERNAME)
-curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/pve-hardware-monitor/main/pve-monitor-installer.sh | bash
+# Install from GitHub 
+curl -sSL https://raw.githubusercontent.com/Muneeb-Nazir/Proxmox-pve-hardware-monitor/pve-monitor-installer.sh | bash
 
 # Or with wget
-wget -qO- https://raw.githubusercontent.com/YOUR_USERNAME/pve-hardware-monitor/main/pve-monitor-installer.sh | bash
+wget -qO- https://raw.githubusercontent.com/Muneeb-Nazir/Proxmox-pve-hardware-monitor/pve-monitor-installer.sh | bash
 Update existing installation:
 bash
 # Run the installer with update flag
-curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/pve-hardware-monitor/main/pve-monitor-installer.sh | bash -s -- --update
+curl -sSL https://raw.githubusercontent.com/Muneeb-Nazir/Proxmox-pve-hardware-monitor/pve-monitor-installer.sh | bash -s -- --update
 
 # Or just run the installer and choose option 2
 pve-monitor-installer.sh
