@@ -147,7 +147,7 @@ check_for_updates() {
                 ;;
             3)
                 show_changelog
-                check_for_updates  # Recursive call after showing changelog
+                check_for_updates
                 ;;
         esac
     else
@@ -162,19 +162,16 @@ perform_update() {
     echo -e "${YELLOW}                    UPDATING PVE MONITOR                         ${NC}"
     echo -e "${YELLOW}════════════════════════════════════════════════════════════════${NC}"
     
-    # Stop services
     print_status "Stopping services..."
     systemctl stop pve-monitor.service 2>/dev/null
     systemctl stop temp-logger.service 2>/dev/null
     
-    # Backup current config
     if [ -f "/etc/$CONFIG_FILE" ]; then
         print_status "Backing up configuration..."
         cp "/etc/$CONFIG_FILE" "/etc/${CONFIG_FILE}.backup"
-        print_success "Configuration backed up to /etc/${CONFIG_FILE}.backup"
+        print_success "Configuration backed up"
     fi
     
-    # Download new version
     print_status "Downloading new version..."
     local temp_script="/tmp/${MAIN_SCRIPT}"
     if download_from_github "$MAIN_SCRIPT" "$temp_script"; then
@@ -186,10 +183,8 @@ perform_update() {
         return 1
     fi
     
-    # Update version file
     echo "$SCRIPT_VERSION" > /usr/local/bin/pve-monitor-version
     
-    # Restart services
     print_status "Restarting services..."
     systemctl daemon-reload
     systemctl start pve-monitor.service 2>/dev/null
@@ -264,25 +259,21 @@ uninstall_monitor() {
         return
     fi
     
-    # Stop and disable services
     print_status "Stopping services..."
     systemctl stop pve-monitor.service temp-logger.service 2>/dev/null
     systemctl disable pve-monitor.service temp-logger.service 2>/dev/null
     
-    # Remove service files
     print_status "Removing service files..."
     rm -f /etc/systemd/system/pve-monitor.service
     rm -f /etc/systemd/system/temp-logger.service
     systemctl daemon-reload
     
-    # Remove scripts
     print_status "Removing scripts..."
     rm -f /usr/local/bin/pve-monitor
     rm -f /usr/local/bin/temp-logger
     rm -f /usr/local/bin/temp-alert
     rm -f /usr/local/bin/pve-monitor-version
     
-    # Remove configuration
     read -p "Remove configuration files? (y/N): " remove_config
     if [[ "$remove_config" == "y" || "$remove_config" == "Y" ]]; then
         rm -f /etc/pve-monitor.conf
@@ -292,11 +283,9 @@ uninstall_monitor() {
         print_status "Configuration preserved at /etc/pve-monitor.conf"
     fi
     
-    # Remove cron job
     print_status "Removing cron jobs..."
     crontab -l 2>/dev/null | grep -v "temp-alert" | crontab - 2>/dev/null
     
-    # Remove log files
     read -p "Remove log files? (y/N): " remove_logs
     if [[ "$remove_logs" == "y" || "$remove_logs" == "Y" ]]; then
         rm -f /var/log/pve-temperatures.log*
@@ -315,11 +304,9 @@ install_monitor() {
     echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
     echo ""
     
-    # Create temporary directory
     local temp_dir=$(mktemp -d)
     cd "$temp_dir"
     
-    # Download scripts
     print_status "Downloading scripts from GitHub..."
     
     if check_internet; then
@@ -333,7 +320,6 @@ install_monitor() {
         return 1
     fi
     
-    # Install dependencies
     print_status "Installing dependencies..."
     apt update -qq &
     show_spinner $! "Updating package lists"
@@ -341,19 +327,15 @@ install_monitor() {
     apt install -y -qq lm-sensors bc curl wget postfix mailutils pve-container &
     show_spinner $! "Installing packages"
     
-    # Create directories
     print_status "Creating directories..."
     mkdir -p /usr/local/bin
     
-    # Copy scripts
     print_status "Installing scripts..."
     cp pve-monitor /usr/local/bin/
     chmod +x /usr/local/bin/pve-monitor
     
-    # Save version
     echo "$SCRIPT_VERSION" > /usr/local/bin/pve-monitor-version
     
-    # Create configuration
     print_status "Creating configuration..."
     cat > /etc/pve-monitor.conf << EOF
 # PVE Monitor Configuration
@@ -361,7 +343,7 @@ install_monitor() {
 # Version: $SCRIPT_VERSION
 
 # Email settings
-ALERT_EMAIL="${EMAIL_ADDR:-root@localhost}"
+ALERT_EMAIL="root@localhost"
 TEMP_WARNING=75
 TEMP_CRITICAL=85
 
@@ -381,7 +363,6 @@ SHOW_VM=true
 SHOW_ALL_CONTAINERS=true
 EOF
     
-    # Create systemd service
     print_status "Creating systemd services..."
     cat > /etc/systemd/system/pve-monitor.service << EOF
 [Unit]
@@ -403,7 +384,6 @@ TTYPath=/dev/tty1
 WantedBy=multi-user.target
 EOF
 
-    # Create logger service
     cat > /etc/systemd/system/temp-logger.service << EOF
 [Unit]
 Description=PVE Temperature Logger with Email Alerts
@@ -420,10 +400,8 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-    # Create logger script (simplified version here, full version would be downloaded)
     cat > /usr/local/bin/temp-logger << 'LOGGER_EOF'
 #!/bin/bash
-# Logger script - full version
 LOG_FILE="/var/log/pve-temperatures.log"
 while true; do
     echo "$(date): Temperature logging active" >> $LOG_FILE
@@ -432,32 +410,26 @@ done
 LOGGER_EOF
     chmod +x /usr/local/bin/temp-logger
     
-    # Create alert script
     cat > /usr/local/bin/temp-alert << 'ALERT_EOF'
 #!/bin/bash
-# Alert script
 echo "Temperature check completed at $(date)" >> /var/log/pve-temperatures.log
 ALERT_EOF
     chmod +x /usr/local/bin/temp-alert
     
-    # Enable and start services
     print_status "Starting services..."
     systemctl daemon-reload
     systemctl enable pve-monitor.service temp-logger.service
     systemctl start pve-monitor.service temp-logger.service
     
-    # Setup cron
     print_status "Setting up cron jobs..."
     (crontab -l 2>/dev/null; echo "*/5 * * * * /usr/local/bin/temp-alert") | crontab - 2>/dev/null
     
-    # Configure postfix
     print_status "Configuring email..."
     if ! systemctl is-active --quiet postfix; then
         systemctl start postfix
         systemctl enable postfix
     fi
     
-    # Cleanup
     cd /
     rm -rf "$temp_dir"
     
@@ -578,7 +550,6 @@ show_about() {
 main() {
     check_root
     
-    # Check if being run with --update flag
     if [[ "$1" == "--update" ]]; then
         check_for_updates
         exit 0
@@ -594,8 +565,8 @@ main() {
     show_menu
 }
 
-# Run main function with arguments
 main "$@"
 SCRIPT_EOF
 
 chmod +x pve-monitor-installer.sh
+./pve-monitor-installer.sh
