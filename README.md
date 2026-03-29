@@ -4,6 +4,10 @@ One-line Installation from GitHub:
 bash
 # Install from GitHub 
 # One-line install (recommended)
+
+Direct in Proxmox Terminal :- 
+bash <(curl -sSL https://raw.githubusercontent.com/Muneeb-Nazir/Proxmox-pve-hardware-monitor/main/pve-monitor-installer.sh)
+# Run using curl
 curl -sSL https://raw.githubusercontent.com/Muneeb-Nazir/Proxmox-pve-hardware-monitor/main/pve-monitor-installer.sh | bash
 
 # Or with wget
